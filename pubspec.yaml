@@ -2,6 +2,7 @@ name: flutter_quakes
 description: A new Flutter application.
 
 dependencies:
+  http: ^0.12.0+1
   flutter:
     sdk: flutter
 
