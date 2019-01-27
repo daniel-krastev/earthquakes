@@ -222,12 +222,16 @@ class _HomeState extends State<Home> {
       child: Column(
         children: <Widget>[
           ListTile(
-            leading: CircleAvatar(
-                minRadius: 40.0,
-                backgroundColor: Colors.green,
-                child: Text("${_data[pos]["properties"]["mag"]}",
-                    style: TextStyle(
-                        fontWeight: FontWeight.w500, color: Colors.white))),
+            leading: Container(
+              width: 35.0,
+              height: 35.0,
+              child: CircleAvatar(
+                  minRadius: 30.0,
+                  backgroundColor: Colors.green,
+                  child: Text("${_data[pos]["properties"]["mag"]}",
+                      style: TextStyle(
+                          fontWeight: FontWeight.w500, color: Colors.white))),
+            ),
             title: Text(
               _dateFormat.format(_date),
               style: TextStyle(
