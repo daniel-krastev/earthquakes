@@ -1,8 +1,5 @@
 # flutter_quakes
 
-A new Flutter application.
+This is a flutter application that shows the earthquakes from around the world.
 
-## Getting Started
-
-For help getting started with Flutter, view our online
-[documentation](https://flutter.io/).
+Filter, check depth, time, location of the eartquake.
