@@ -6,47 +6,57 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+// Entry point of the application. Initializes shared preferences and runs the application.
 main() async {
   prefs = await SharedPreferences.getInstance();
   runApp(MaterialApp(title: "Earthqakes App", home: Home()));
 }
 
-const String ALL = "all";
+// Constants for the application
+const String ALL = "all"; // Represents all earthquakes
 const String BASE_URL =
-    "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/SIGNIFICANCE_PERIOD.geojson";
-const String DAY = "day";
-const String HOUR = "hour";
-const String MONTH = "month";
-const int PERIOD_DEFAULT_IDX = 2;
-const String PERIOD_KEY = "Period.key";
-const int SIGNIFICANCE_DEFAULT_IDX = 1;
+    "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/SIGNIFICANCE_PERIOD.geojson"; // Base URL for the API
+const String DAY = "day"; // Represents a day
+const String HOUR = "hour"; // Represents an hour
+const String MONTH = "month"; // Represents a month
+const int PERIOD_DEFAULT_IDX = 2; // Default index for the period
+const String PERIOD_KEY = "Period.key"; // Key for the period
+const int SIGNIFICANCE_DEFAULT_IDX = 1; // Default index for the significance
 
-const String SIGNIFICANCE_KEY = "Significance.key";
-const String SIGNIFICANT = "significant";
+const String SIGNIFICANCE_KEY = "Significance.key"; // Key for the significance
+const String SIGNIFICANT = "significant"; // Represents significant earthquakes
 
-const String WEEK = "week";
+const String WEEK = "week"; // Represents a week
 
-const String _1_0 = "1.0";
-const String _2_5 = "2.5";
+const String _1_0 = "1.0"; // Represents earthquakes above 1.0
+const String _2_5 = "2.5"; // Represents earthquakes above 2.5
 
-const String _4_5 = "4.5";
+const String _4_5 = "4.5"; // Represents earthquakes above 4.5
+// Shared preferences for the application
 SharedPreferences prefs;
+// Date format for the application
 DateFormat _dateFormat = DateFormat("MMMM dd, yyyy h:mm a");
+// Number format for latitude
 NumberFormat _latNumberFormat = NumberFormat("00.##");
+// Number format for longitude
 NumberFormat _longNumberFormat = NumberFormat("000.##");
 
+// Number format for parts of a degree
 NumberFormat _partNumberFormat = NumberFormat("#0.##");
 
+// Sends a GET request to the provided URL and returns the response as a Map
 Future<Map> getJson(String url) async {
   http.Response response = await http.get(url);
   return json.decode(response.body);
 }
 
+// Takes a raw distance in kilometers and returns it as a formatted string
 String normalizeDistance(num rawKm) {
   double rawKmAbs = rawKm.abs().toDouble();
   return "${_partNumberFormat.format(rawKmAbs)} km";
 }
 
+// Takes a raw latitude value and returns it as a formatted string
 String normalizeLat(num rawLat) {
   double rawLatAbs = rawLat.abs().toDouble();
   if (rawLatAbs <= 90.0) {
@@ -72,6 +82,7 @@ String normalizeLat(num rawLat) {
   return "UNKNOWN";
 }
 
+// Takes a raw longitude value and returns it as a formatted string
 String normalizeLong(num rawLong) {
   double rawLongAbs = rawLong.abs().toDouble();
   if (rawLongAbs <= 180.0) {
@@ -97,6 +108,7 @@ String normalizeLong(num rawLong) {
   return "UNKNOWN";
 }
 
+// Represents an entry with a value and a title
 class EntryData {
   final String value;
   final String title;
@@ -109,6 +121,7 @@ class Home extends StatefulWidget {
   _HomeState createState() => _HomeState();
 }
 
+// Represents the state of the Home widget, which includes the current URL, sign, period, date, future data, data, and loaded status
 class _HomeState extends State<Home> {
   final List<EntryData> _periodList = [
     EntryData(HOUR, "Past Hour"),
@@ -139,138 +152,6 @@ class _HomeState extends State<Home> {
         _periodList[prefs.get(PERIOD_KEY) ?? PERIOD_DEFAULT_IDX].value;
     _currentURL = _getURL();
     _init();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(
-          title: Column(
-            children: <Widget>[
-              Text(
-                "Earthqakes",
-                style: TextStyle(fontSize: 25.0, fontWeight: FontWeight.w300),
-              ),
-              Text("$_currentSign / $_currentPeriod",
-                  style: TextStyle(
-                      fontStyle: FontStyle.italic,
-                      color: Colors.grey.shade300,
-                      fontSize: 18.0,
-                      fontWeight: FontWeight.w200))
-            ],
-          ),
-          centerTitle: true,
-          backgroundColor: Colors.redAccent,
-          leading: IconButton(
-            icon: Icon(Icons.refresh),
-            onPressed: () {
-              _onURLChanged(_currentURL);
-            },
-          ),
-          actions: <Widget>[
-            PopupMenuButton<EntryData>(
-              icon: Icon(Icons.line_weight),
-              onSelected: _onSignChanged,
-              itemBuilder: (ctx) {
-                return _significanceList.map((a) {
-                  return CheckedPopupMenuItem<EntryData>(
-                    checked: _currentSign == a.value,
-                    child: Text(a.title),
-                    value: a,
-                  );
-                }).toList();
-              },
-            ),
-            PopupMenuButton<EntryData>(
-              icon: Icon(Icons.timer),
-              onSelected: _onPeriodChanged,
-              itemBuilder: (ctx) {
-                return _periodList.map((a) {
-                  return CheckedPopupMenuItem<EntryData>(
-                    checked: _currentPeriod == a.value,
-                    child: Text(a.title),
-                    value: a,
-                  );
-                }).toList();
-              },
-            ),
-          ],
-        ),
-        body: _isLoaded
-            ? ListView.builder(
-                itemCount: _data.length,
-                itemBuilder: _getTile,
-              )
-            : Center(
-                child: Text(
-                  "Loading...",
-                  style: TextStyle(
-                      color: Colors.black26,
-                      fontSize: 35.0,
-                      fontWeight: FontWeight.w500),
-                ),
-              ));
-  }
-
-  Widget _getTile(BuildContext ctx, int pos) {
-    _date = DateTime.fromMillisecondsSinceEpoch(
-        _data[pos]["properties"]["time"],
-        isUtc: true);
-    return Container(
-      margin: EdgeInsets.all(4.0),
-      padding: EdgeInsets.all(8.0),
-      child: Column(
-        children: <Widget>[
-          ListTile(
-            leading: Container(
-              width: 35.0,
-              height: 35.0,
-              child: CircleAvatar(
-                  minRadius: 30.0,
-                  backgroundColor: Colors.green,
-                  child: Text("${_data[pos]["properties"]["mag"]}",
-                      style: TextStyle(
-                          fontWeight: FontWeight.w500, color: Colors.white))),
-            ),
-            title: Text(
-              _dateFormat.format(_date),
-              style: TextStyle(
-                  color: Colors.orange,
-                  fontSize: 22.0,
-                  fontWeight: FontWeight.w500),
-            ),
-            subtitle: Text(
-              "${_data[pos]["properties"]["place"]}",
-              style: TextStyle(fontSize: 14.0, fontStyle: FontStyle.italic),
-            ),
-            onTap: () {
-              _showDialog(ctx, pos);
-            },
-            onLongPress: () {
-              _showLongDialog(ctx, pos);
-            },
-          ),
-          Divider()
-        ],
-      ),
-    );
-  }
-
-  String _getURL() {
-    return BASE_URL
-        .replaceAll(RegExp('SIGNIFICANCE'), _currentSign)
-        .replaceAll(RegExp('PERIOD'), _currentPeriod);
-  }
-
-  void _init() {
-    _isLoaded = false;
-    _futureData = getJson(_currentURL);
-    _futureData.then((s) {
-      setState(() {
-        _data = s['features'];
-        _isLoaded = true;
-      });
-    });
   }
 
   void _onPeriodChanged(final EntryData data) {
